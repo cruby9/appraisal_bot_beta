@@ -1,0 +1,19 @@
+<table>
+    <thead>
+      <tr>
+        <th>cost</th>
+        
+      </tr>
+    </thead>
+    <tbody>
+      {% for out in output %}
+        <tr>
+          <td>{{ out }}</td>
+         
+        </tr>
+      {% endfor %}
+
+    </tbody>
+  </table>
+
+  "The cost for a {{row}} quality rated home with {{col}} sq.ft. is ${{cost}}"
