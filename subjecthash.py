@@ -145,9 +145,14 @@ def bed_count(df):
     return df['Upper Level Bedrooms'].fillna(0) + df['Main Level Bedrooms'].fillna(0) + df['Lower Level Bedrooms'].fillna(0)
 
 def baths_above(df):
-    return df['Bathrooms Total Integer'].fillna(0) - df['Basement Level Bathrooms'].fillna(0) + \
-           df['Bathrooms One Quarter'].fillna(0) * 0.1 + \
-           df['Bathrooms Half'].fillna(0) * 0.1
+    full_baths = df['Bathrooms Full'].fillna(0)
+    half_baths = df['Bathrooms Half'].fillna(0) * 0.1
+    quarter_baths = df['Bathrooms One Quarter'].fillna(0) * 0.1
+    three_quarter_baths = df['Bathrooms Three Quarter'].fillna(0)
+
+    above_baths = (full_baths + half_baths + quarter_baths + three_quarter_baths) - df['Basement Level Bathrooms'].fillna(0)
+
+    return above_baths
 
 
 
