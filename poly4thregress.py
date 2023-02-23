@@ -2,6 +2,7 @@ import sqlite3
 import numpy as np
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression
+import hashlib
 
 conn = sqlite3.connect("./test_db.sqlite")
 cursor = conn.cursor()
@@ -9,6 +10,7 @@ cursor = conn.cursor()
 tables = ["all_sales", "comparable", "competing"]
 
 for table in tables:
+    print(f"Processing table '{table}'...")
     query = f"SELECT `Above Grade Finished Area`, `Close Price` FROM {table} WHERE `Above Grade Finished Area` IS NOT NULL AND `Close Price` IS NOT NULL"
     cursor.execute(query)
 
@@ -34,14 +36,29 @@ for table in tables:
     R_squared = model.score(X_poly, Y)
     Std_Deviation = np.sqrt(np.sum((Y - Y_pred)**2) / len(X))
 
-    print(f"Results for {table}:")
-    print("Regression equation:", model.intercept_, model.coef_)
-    equation = np.poly1d(np.flip(np.append(model.intercept_, model.coef_)))
-    print("Polynomial equation:", equation)
-    print("Mean Absolute Error (MAE):", round(MAE))
-    print("Standard Error of MAE:", round(Std_Error_MAE))
-    print("R-Squared:", round(R_squared, 2))
-    print("Standard Deviation:", round(Std_Deviation))
+    for i, row in enumerate(cursor.fetchall()):
+        print(f"Processing row {i+1}...")
+        row_hash = hashlib.sha256(str(row).encode()).hexdigest()
+        key = f"{table}_{i+1}"
+        values = {
+            "Above Grade Finished Area": row[0],
+            "Close Price": row[1],
+            "Predicted Close Price": Y_pred[i],
+            "Absolute Error": np.abs(Y[i] - Y_pred[i]),
+            "Mean Absolute Error": MAE,
+            "Standard Error of MAE": Std_Error_MAE,
+            "R-Squared": R_squared,
+            "Standard Deviation": Std_Deviation,
+            
+        }
+        print(f"{key}: {row_hash} {values}")
+        
+
+    print(f"Finished processing table '{table}'.")
+    print(MAE, Std_Error_MAE, R_squared, Std_Deviation) 
+    print()
 
 conn.close()
+
+
 
