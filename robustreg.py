@@ -1,47 +1,49 @@
 import sqlite3
 import numpy as np
-from scipy.optimize import least_squares
-#working rpobust regression
+from sklearn.metrics import mean_absolute_error
 
 conn = sqlite3.connect("./test_db.sqlite")
 cursor = conn.cursor()
 
 tables = ["all_sales", "comparable", "competing"]
-
-def residuals(params, X, Y):
-    a, b = params
-    return Y - (a + b * X)
+output_dict = {}
 
 for table in tables:
     query = f"SELECT `Above Grade Finished Area`, `Close Price` FROM {table} WHERE `Above Grade Finished Area` IS NOT NULL AND `Close Price` IS NOT NULL"
     cursor.execute(query)
+    data = cursor.fetchall()
+    data = np.array(data)
 
-    X, Y = [], []
-    for row in cursor.fetchall():
-        X.append(row[0])
-        Y.append(row[1])
+    x = data[:, 0]
+    y = data[:, 1]
 
-    X = np.array(X)
-    Y = np.array(Y)
+    lower_bound_x = np.percentile(x, 2.5)
+    upper_bound_x = np.percentile(x, 97.5)
+    lower_bound_y = np.percentile(y, 2.5)
+    upper_bound_y = np.percentile(y, 97.5)
 
-    initial_guess = np.zeros(2)
-    result = least_squares(residuals, initial_guess, args=(X, Y))
+    trimmed_data = [(xi, yi) for xi, yi in zip(x, y) if lower_bound_x <= xi <= upper_bound_x and lower_bound_y <= yi <= upper_bound_y]
+    trimmed_data = np.array(trimmed_data)
 
-    a, b = result.x
-    regression_equation = f"ŷ = {b}X + {a}"
+    x = trimmed_data[:, 0]
+    y = trimmed_data[:, 1]
 
-    Y_pred = b * X + a
-    MAE = np.mean(np.abs(Y - Y_pred))
-    Std_Error_MAE = np.sqrt(np.sum((Y - Y_pred - MAE)**2) / (len(X) - 2))
+    z = np.polyfit(x, y, 1)
+    p = np.poly1d(z)
 
-    R_squared = 1 - np.sum((Y - Y_pred)**2) / np.sum((Y - np.mean(Y))**2)
-    Std_Deviation = np.sqrt(np.sum((Y - Y_pred)**2) / len(X))
+    per_sq_ft_change = int(z[0])
 
-    print(f"Results for {table}:")
-    print("Regression equation:", regression_equation)
-    print("Mean Absolute Error (MAE):", round(MAE))
-    print("Standard Error of MAE:", round(Std_Error_MAE))
-    print("R-Squared:", round(R_squared, 2))
-    print("Standard Deviation:", round(Std_Deviation))
+    y_pred = p(x)
+    mae = int(mean_absolute_error(y, y_pred))
+    se_mae = int(np.std(y - y_pred) / np.sqrt(len(y)))
+    trim = int(mae * 5 / 100)
 
-conn.close()
+    output_dict[table] = {
+        "per_sq_ft_change": per_sq_ft_change,
+        "MAE": mae,
+        "SE_MAE": se_mae,
+        "trim_setting": trim,
+    }
+
+print(output_dict)
+
