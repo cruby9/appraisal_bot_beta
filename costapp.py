@@ -250,12 +250,6 @@ def get_depreciation_cost(years_old, age):
 
 
 
-
-
-
-
-
-
 if __name__ == '__main__':
     # call the function with the desired input value for finished basement
     row, col, cost = find_row_and_column(1150, 2.5)
