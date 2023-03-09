@@ -400,8 +400,6 @@ def sale_to_list_ratio(file_path):
 
 
 
-
-
 if __name__ == '__main__':
     file_path = 'competing.csv'
     competing_df = pd.read_csv(file_path)
