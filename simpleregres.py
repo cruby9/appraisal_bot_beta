@@ -1,12 +1,10 @@
 import sqlite3
 import numpy as np
-#working simple regression
-conn = sqlite3.connect("./test_db.sqlite")
-cursor = conn.cursor()
 
-tables = ["all_sales", "comparable", "competing"]
+def calculate_metrics(table):
+    conn = sqlite3.connect("./test_db.sqlite")
+    cursor = conn.cursor()
 
-for table in tables:
     query = f"SELECT `Above Grade Finished Area`, `Close Price` FROM {table} WHERE `Above Grade Finished Area` IS NOT NULL AND `Close Price` IS NOT NULL"
     cursor.execute(query)
 
@@ -39,14 +37,26 @@ for table in tables:
     R_squared = 1 - np.sum((Y - Y_pred)**2) / np.sum((Y - mean_Y)**2)
     Std_Deviation = np.sqrt(np.sum((Y - Y_pred)**2) / len(X))
 
-    print(f"Results for {table}:")
-    print("Regression equation:", regression_equation)
-    print("Mean Absolute Error (MAE):", round(MAE))
-    print("Standard Error of MAE:", round(Std_Error_MAE))
-    print("R-Squared:", round(R_squared, 2))
-    print("Standard Deviation:", round(Std_Deviation))
+    output = {
+        "Regression Equation": regression_equation,
+        "Mean Absolute Error (MAE)": round(MAE),
+        "Standard Error of MAE": round(Std_Error_MAE),
+        "R-Squared": round(R_squared, 2),
+        "Standard Deviation": round(Std_Deviation),
+    }
 
-conn.close()
+    conn.close()
+
+    return output
+
+tables = ["all_sales", "comparable", "competing"]
+output_dict = {}
+
+for table in tables:
+    output_dict[table] = calculate_metrics(table)
+
+print(output_dict)
+
 
 
 
