@@ -1,13 +1,12 @@
 import sqlite3
 import numpy as np
-import matplotlib.pyplot as plt
 from sklearn.metrics import mean_absolute_error
-import hashlib
 
 conn = sqlite3.connect("./test_db.sqlite")
 cursor = conn.cursor()
 
 tables = ["all_sales", "comparable", "competing"]
+output_dict = {}
 
 for table in tables:
     query = f"SELECT `Above Grade Finished Area`, `Close Price` FROM {table} WHERE `Above Grade Finished Area` IS NOT NULL AND `Close Price` IS NOT NULL"
@@ -39,29 +38,23 @@ for table in tables:
     se_mae = int(np.std(y - y_pred) / np.sqrt(len(y)))
     trim = int(mae * 5 / 100)
 
-    plt.scatter(x, y)
-    plt.plot(x, p(x), "r")
-    plt.xlabel("Above Grade Finished Area (Square Feet)")
-    plt.ylabel("Close Price (USD)")
-    plt.title(f"Sensitivity Analysis of Close Price on Above Grade Finished Area ({table})")
-    plt.show()
-
-    # create hash object and update with table name, per sq ft change, mae, se_mae, and trim
-    h = hashlib.sha256()
-    h.update(table.encode())
-    h.update(str(per_sq_ft_change).encode())
-    h.update(str(mae).encode())
-    h.update(str(se_mae).encode())
-    h.update(str(trim).encode())
-    hash_output = h.hexdigest()
+    output_dict[table] = {
+        "per_sq_ft_change": per_sq_ft_change,
+        "MAE": mae,
+        "SE_MAE": se_mae,
+        "trim_setting": trim,
+    }
 
     print(f"Table: {table}")
     print(f"Result: Per Square Foot Change: {per_sq_ft_change} USD")
     print(f"Mean Absolute Error (MAE): {mae} USD")
     print(f"Standard Error of MAE: {se_mae} USD")
     print(f"Trim Setting 5%: {trim} USD")
-    print(f"Hash Output: {hash_output}")
     print()
+
+print(output_dict)
+
+
 
 
 
