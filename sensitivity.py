@@ -2,8 +2,7 @@ import sqlite3
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_absolute_error
-
-#working sensitiviy analysis
+import hashlib
 
 conn = sqlite3.connect("./test_db.sqlite")
 cursor = conn.cursor()
@@ -47,12 +46,23 @@ for table in tables:
     plt.title(f"Sensitivity Analysis of Close Price on Above Grade Finished Area ({table})")
     plt.show()
 
+    # create hash object and update with table name, per sq ft change, mae, se_mae, and trim
+    h = hashlib.sha256()
+    h.update(table.encode())
+    h.update(str(per_sq_ft_change).encode())
+    h.update(str(mae).encode())
+    h.update(str(se_mae).encode())
+    h.update(str(trim).encode())
+    hash_output = h.hexdigest()
+
     print(f"Table: {table}")
     print(f"Result: Per Square Foot Change: {per_sq_ft_change} USD")
     print(f"Mean Absolute Error (MAE): {mae} USD")
     print(f"Standard Error of MAE: {se_mae} USD")
     print(f"Trim Setting 5%: {trim} USD")
+    print(f"Hash Output: {hash_output}")
     print()
+
 
 
 
